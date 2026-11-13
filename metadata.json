@@ -1,0 +1,8 @@
+{
+  "name": "Remix 电力安全隐患监管平台",
+  "description": "高科技电力安全隐患监管平台与智能大屏登录系统",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
