@@ -37,3 +37,21 @@ export interface SubstationNode {
   status: '正常' | '预警' | '危险';
   hazardsCount: number;
 }
+
+export type WorkOrderLevel = '紧急' | '严重' | '一般';
+export type WorkOrderStatus = '待处理' | '已归档';
+
+export interface WorkOrder {
+  id: number;
+  code: string;
+  name: string;
+  region: string;
+  owner: string;
+  level: WorkOrderLevel;
+  alarmType: string;
+  duration: string;
+  disposalStatus: string;
+  status: WorkOrderStatus;
+  genTime: string;
+  handleTime: string;
+}

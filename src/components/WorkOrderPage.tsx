@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { 
   FileText, CheckSquare, Search, Filter, RefreshCw, CheckCircle2, AlertTriangle, ShieldAlert, X, Wrench, ShieldCheck 
 } from 'lucide-react';
+import { WorkOrder } from '../types';
+import { INITIAL_WORK_ORDERS, summarizeWorkOrders, filterWorkOrders } from '../data/workOrders';
 
 interface WorkOrderPageProps {
   plantName: string;
@@ -43,19 +45,7 @@ export const WorkOrderPage: React.FC<WorkOrderPageProps> = ({ plantName, systemD
   };
 
   // Work orders sorted descending by recent generation time
-  const [workOrders, setWorkOrders] = useState([
-    { id: 1, code: '202610160001', name: 'CDZ000001', region: '区域一', owner: '这是用户名称', level: '紧急', alarmType: '温度过高', duration: '30min', disposalStatus: '已处置', status: '待处理', genTime: '2026-10-16 15:10', handleTime: '-' },
-    { id: 2, code: '202610160002', name: 'CDZ000002', region: '区域二', owner: '这是用户名称', level: '严重', alarmType: '设备功率比低', duration: '30min', disposalStatus: '已处置', status: '待处理', genTime: '2026-10-16 14:45', handleTime: '-' },
-    { id: 3, code: '202610160003', name: 'CDZ000003', region: '区域一', owner: '这是用户名称', level: '一般', alarmType: '设备欠压', duration: '30min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 14:20', handleTime: '2026-10-16 14:50' },
-    { id: 4, code: '202610160004', name: 'CDZ000004', region: '区域三', owner: '这是用户名称', level: '紧急', alarmType: '设备欠压', duration: '60min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 13:05', handleTime: '2026-10-16 13:40' },
-    { id: 5, code: '202610160005', name: 'CDZ000005', region: '区域四', owner: '这是用户名称', level: '严重', alarmType: '数据未采集', duration: '30min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 12:15', handleTime: '2026-10-16 12:45' },
-    { id: 6, code: '202610160006', name: 'CDZ000002', region: '区域五', owner: '这是用户名称', level: '严重', alarmType: '温度过高', duration: '15min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 11:30', handleTime: '2026-10-16 11:50' },
-    { id: 7, code: '202610160007', name: 'CDZ000003', region: '区域六', owner: '这是用户名称', level: '一般', alarmType: '设备负载', duration: '30min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 10:20', handleTime: '2026-10-16 10:55' },
-    { id: 8, code: '202610160008', name: 'CDZ000004', region: '区域七', owner: '这是用户名称', level: '一般', alarmType: '温度过高', duration: '45min', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-16 09:50', handleTime: '2026-10-16 10:30' },
-    { id: 9, code: '202610150009', name: 'CDZ000005', region: '区域三', owner: '这是用户名称', level: '一般', alarmType: '数据未采集', duration: '1d', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-15 18:00', handleTime: '2026-10-15 19:30' },
-    { id: 10, code: '202610150010', name: 'CDZ000002', region: '区域二', owner: '这是用户名称', level: '一般', alarmType: '数据未采集', duration: '2d', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-15 14:10', handleTime: '2026-10-15 16:00' },
-    { id: 11, code: '202610150011', name: 'CDZ000003', region: '区域一', owner: '这是用户名称', level: '一般', alarmType: '数据未采集', duration: '1.5h', disposalStatus: '已处置', status: '已归档', genTime: '2026-10-15 10:00', handleTime: '2026-10-15 11:30' },
-  ]);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(INITIAL_WORK_ORDERS);
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === filteredOrders.length) {
@@ -83,7 +73,7 @@ export const WorkOrderPage: React.FC<WorkOrderPageProps> = ({ plantName, systemD
     setSelectedIds([]);
   };
 
-  const handleOpenProcessModal = (item: any) => {
+  const handleOpenProcessModal = (item: WorkOrder) => {
     setActiveOrder({
       id: item.id,
       code: item.code,
@@ -111,12 +101,12 @@ export const WorkOrderPage: React.FC<WorkOrderPageProps> = ({ plantName, systemD
     showToast(`工单 [${activeOrder.code}] 已成功归档处理！`);
   };
 
-  const filteredOrders = workOrders.filter(o => {
-    if (levelFilter !== '全部' && o.level !== levelFilter) return false;
-    if (regionFilter !== '全部' && o.region !== regionFilter) return false;
-    if (statusFilter !== '全部' && o.status !== statusFilter) return false;
-    if (searchQuery && !o.code.toLowerCase().includes(searchQuery.toLowerCase()) && !o.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
+  const summary = summarizeWorkOrders(workOrders);
+  const filteredOrders = filterWorkOrders(workOrders, {
+    level: levelFilter,
+    region: regionFilter,
+    status: statusFilter,
+    query: searchQuery,
   });
 
   return (
@@ -143,7 +133,7 @@ export const WorkOrderPage: React.FC<WorkOrderPageProps> = ({ plantName, systemD
               </span>
             </div>
             <p className="text-slate-400 text-xs mt-1">
-              系统时间: {systemDateTime} · 待处理工单: <span className="text-rose-400 font-bold">2 个</span> · 已归档工单: <span className="text-emerald-400 font-bold">9 个</span> (按近期降序排列)
+              系统时间: {systemDateTime} · 待处理工单: <span className="text-rose-400 font-bold">{summary.pending} 个</span> · 已归档工单: <span className="text-emerald-400 font-bold">{summary.archived} 个</span> · 共 {summary.total} 个 (按近期降序排列)
             </p>
           </div>
         </div>
@@ -280,6 +270,13 @@ export const WorkOrderPage: React.FC<WorkOrderPageProps> = ({ plantName, systemD
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan={14} className="p-8 text-center text-slate-400">
+                    未找到符合筛选条件的工单，请调整筛选条件或清空搜索
+                  </td>
+                </tr>
+              )}
               {filteredOrders.map((item, index) => (
                 <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
                   <td className="p-3 text-center">
