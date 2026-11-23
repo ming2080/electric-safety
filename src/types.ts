@@ -55,3 +55,68 @@ export interface WorkOrder {
   genTime: string;
   handleTime: string;
 }
+
+/** 厂站全景图上的建筑点位 */
+export interface PanoramaBuilding {
+  id: string;
+  number: string;
+  name: string;
+  isOverload: boolean;
+  p: string;
+  e: string;
+  pvBadge?: string;
+  chargerBadge?: string;
+  storageBadge?: string;
+  x: number; // 百分比
+  y: number; // 百分比
+  pvPower: string;
+  temp: string;
+  note?: string;
+}
+
+/** 全景图上的变压器点位 */
+export interface PanoramaTransformer {
+  id: string;
+  name: string;
+  p: string;
+  t: string;
+  x: number;
+  y: number;
+  isWarning: boolean;
+}
+
+/** 全景图上的储能站 / 充电站徽标 */
+export interface PanoramaFacility {
+  name: string;
+  type: 'storage' | 'charging';
+  x: number;
+  y: number;
+}
+
+/** 逐时用电量柱状图数据点 */
+export interface HourlyConsumptionPoint {
+  hour: string;
+  today: number;
+  tomorrow: number;
+}
+
+/** 实时负荷及预测曲线数据点 */
+export interface RealtimeLoadPoint {
+  time: string;
+  today: number;
+  tomorrow: number;
+}
+
+export type RealtimeAlarmLevel = '严重' | '紧急' | '一般';
+export type RealtimeAlarmStatus = '未处置' | '已处置';
+
+/** 厂站全景页底部故障告警流，按时间降序排列 */
+export interface RealtimeAlarm {
+  id: string;
+  level: RealtimeAlarmLevel;
+  status: RealtimeAlarmStatus;
+  device: string;
+  time: string;
+  detail: string;
+  action: string;
+}
