@@ -120,3 +120,44 @@ export interface RealtimeAlarm {
   detail: string;
   action: string;
 }
+
+export type DisposalAlarmLevel = '紧急' | '严重' | '一般';
+export type DisposalAlarmStatus = '未处置' | '已处置';
+
+/** 告警处置页明细表中的一条告警记录，按发生时间降序排列 */
+export interface DisposalAlarm {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  region: string;
+  owner: string;
+  level: DisposalAlarmLevel;
+  alarmType: string;
+  value: string;
+  duration: string;
+  status: DisposalAlarmStatus;
+  time: string;
+}
+
+/** 告警类型概况卡片的一行统计 */
+export interface AlarmTypeStat {
+  label: string;
+  percent: string;
+  count: number;
+  colorClass: string;
+}
+
+/** 告警设备类型卡片的一格统计 */
+export interface AlarmDeviceTypeStat {
+  label: string;
+  count: number;
+  colorClass: string;
+}
+
+/** 区域告警概况柱状图的一根柱 */
+export interface RegionalAlarmBar {
+  label: string;
+  heightClass: string;
+  colorClass: string;
+}

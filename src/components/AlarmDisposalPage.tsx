@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  ShieldAlert, AlertTriangle, CheckCircle2, RefreshCw, Search, Filter, 
+import {
+  ShieldAlert, AlertTriangle, CheckCircle2, RefreshCw, Search, Filter,
   FileText, Clock, BarChart3, PieChart, Activity, ChevronDown, CheckSquare
 } from 'lucide-react';
+
+import {
+  ALARM_DEVICE_TYPE_STATS,
+  ALARM_TYPE_STATS,
+  ALARM_TYPE_TOTAL,
+  DISPOSAL_ALARMS,
+  REGIONAL_ALARM_BARS,
+  summarizeAlarmDisposal
+} from '../data/alarmDisposal';
+import { DisposalAlarm } from '../types';
 
 interface AlarmDisposalPageProps {
   plantName: string;
@@ -23,19 +33,10 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
   };
 
   // Alarm list sorted descending by occurrence time
-  const [alarms, setAlarms] = useState([
-    { id: 1, code: 'JL00001', name: 'CDZ000001', type: '发电设备', region: '区域一', owner: '用户名称A', level: '紧急', alarmType: '温度过高', value: '56/24°C', duration: '30min', status: '未处置', time: '2026-10-16 15:10' },
-    { id: 2, code: 'NBQ00001', name: 'CDZ000002', type: '发电设备', region: '区域二', owner: '用户名称B', level: '严重', alarmType: '设备功率比低', value: '20/90%', duration: '30min', status: '未处置', time: '2026-10-16 14:45' },
-    { id: 3, code: 'XL00001', name: 'CDZ000003', type: '储能设备', region: '区域一', owner: '用户名称C', level: '一般', alarmType: '设备欠压', value: '0V', duration: '30min', status: '未处置', time: '2026-10-16 14:20' },
-    { id: 4, code: 'TK00001', name: 'CDZ000004', type: '充电设备', region: '区域三', owner: '用户名称D', level: '紧急', alarmType: '设备欠压', value: '0V', duration: '60min', status: '已处置', time: '2026-10-16 13:05' },
-    { id: 5, code: 'CDZ00001', name: 'CDZ000005', type: '空调', region: '区域四', owner: '用户名称E', level: '严重', alarmType: '数据未采集', value: '2323.23/15000kWh', duration: '30min', status: '已处置', time: '2026-10-16 12:15' },
-    { id: 6, code: 'NBQ00002', name: 'CDZ000002', type: '计量设备', region: '区域五', owner: '用户名称F', level: '严重', alarmType: '温度过高', value: '0/0/0V', duration: '15min', status: '已处置', time: '2026-10-16 11:30' },
-    { id: 7, code: 'XL00003', name: 'CDZ000003', type: '调控设备', region: '区域六', owner: '用户名称G', level: '一般', alarmType: '设备负载', value: '2323.23/15000kWh', duration: '30min', status: '已处置', time: '2026-10-16 10:20' },
-    { id: 8, code: 'TK00004', name: 'CDZ000004', type: '充电设备', region: '区域七', owner: '用户名称H', level: '一般', alarmType: '温度过高', value: '36/24°C', duration: '45min', status: '已处置', time: '2026-10-16 09:50' },
-    { id: 9, code: 'CDZ00005', name: 'CDZ000005', type: '空调', region: '区域三', owner: '用户名称I', level: '一般', alarmType: '数据未采集', value: '-', duration: '1d', status: '已处置', time: '2026-10-15 18:00' },
-    { id: 10, code: 'NBQ00002', name: 'CDZ000002', type: '发电设备', region: '区域二', owner: '用户名称J', level: '一般', alarmType: '数据未采集', value: '-', duration: '2d', status: '已处置', time: '2026-10-15 14:10' },
-    { id: 11, code: 'XL00003', name: 'CDZ000003', type: '储能设备', region: '区域一', owner: '用户名称K', level: '一般', alarmType: '数据未采集', value: '-', duration: '1.5h', status: '已处置', time: '2026-10-15 10:00' },
-  ]);
+  const [alarms, setAlarms] = useState<DisposalAlarm[]>(DISPOSAL_ALARMS);
+
+  // 页眉与处置概况数字由告警数据实时汇总，生成处置单后随之更新
+  const disposalSummary = summarizeAlarmDisposal(alarms);
 
   const handleGenerateOrder = (id: number, name: string) => {
     setAlarms(alarms.map(a => a.id === id ? { ...a, status: '已处置' } : a));
@@ -75,7 +76,7 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
               </span>
             </div>
             <p className="text-slate-400 text-xs mt-1">
-              系统时间: {systemDateTime} · 当前未处置告警: <span className="text-rose-400 font-bold">3 个</span> · 已处置完成率: <span className="text-emerald-400 font-bold">72.7%</span>
+              系统时间: {systemDateTime} · 当前未处置告警: <span className="text-rose-400 font-bold">{disposalSummary.pending} 个</span> · 已处置完成率: <span className="text-emerald-400 font-bold">{disposalSummary.completionRate}%</span>
             </p>
           </div>
         </div>
@@ -96,14 +97,12 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl space-y-3">
           <div className="flex items-center justify-between text-slate-400">
             <span className="font-bold text-white">告警类型概况</span>
-            <span className="text-[10px] text-cyan-400">总数: 15个</span>
+            <span className="text-[10px] text-cyan-400">总数: {ALARM_TYPE_TOTAL}个</span>
           </div>
           <div className="space-y-1.5 text-[11px]">
-            <div className="flex justify-between items-center"><span className="text-slate-300">温度过高 (21%)</span><span className="text-rose-400 font-bold">3个</span></div>
-            <div className="flex justify-between items-center"><span className="text-slate-300">数据未采集 (21%)</span><span className="text-amber-400 font-bold">3个</span></div>
-            <div className="flex justify-between items-center"><span className="text-slate-300">设备欠压 (17%)</span><span className="text-indigo-400 font-bold">3个</span></div>
-            <div className="flex justify-between items-center"><span className="text-slate-300">设备负载 (14%)</span><span className="text-cyan-400 font-bold">2个</span></div>
-            <div className="flex justify-between items-center"><span className="text-slate-300">功率比低 (8%)</span><span className="text-slate-400 font-bold">4个</span></div>
+            {ALARM_TYPE_STATS.map((stat) => (
+              <div key={stat.label} className="flex justify-between items-center"><span className="text-slate-300">{stat.label} ({stat.percent})</span><span className={`${stat.colorClass} font-bold`}>{stat.count}个</span></div>
+            ))}
           </div>
         </div>
 
@@ -114,12 +113,9 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
             <span className="text-[10px] text-cyan-400">设备监测分布</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-cyan-300 font-bold text-sm">5</div>线路</div>
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-amber-300 font-bold text-sm">8</div>发电</div>
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-emerald-300 font-bold text-sm">6</div>储能</div>
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-indigo-300 font-bold text-sm">12</div>充电</div>
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-rose-300 font-bold text-sm">22</div>空调</div>
-            <div className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className="text-purple-300 font-bold text-sm">14</div>计量</div>
+            {ALARM_DEVICE_TYPE_STATS.map((stat) => (
+              <div key={stat.label} className="p-2 bg-slate-950 rounded-lg border border-slate-800"><div className={`${stat.colorClass} font-bold text-sm`}>{stat.count}</div>{stat.label}</div>
+            ))}
           </div>
         </div>
 
@@ -127,17 +123,17 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl space-y-3">
           <div className="flex items-center justify-between text-slate-400">
             <span className="font-bold text-white">处置情况概况</span>
-            <span className="text-[10px] text-emerald-400">10个已处置 / 3个未处置</span>
+            <span className="text-[10px] text-emerald-400">{disposalSummary.disposed}个已处置 / {disposalSummary.pending}个未处置</span>
           </div>
           <div className="space-y-2 pt-2">
-            <div className="flex justify-between text-[11px]"><span className="text-slate-400">已处理比例</span><span className="text-emerald-400 font-bold">76.9%</span></div>
+            <div className="flex justify-between text-[11px]"><span className="text-slate-400">已处理比例</span><span className="text-emerald-400 font-bold">{disposalSummary.completionRate}%</span></div>
             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div className="bg-emerald-400 h-full w-[77%]"></div>
+              <div className="bg-emerald-400 h-full" style={{ width: `${disposalSummary.completionRate}%` }}></div>
             </div>
             <div className="flex justify-between text-[10px] text-slate-400 pt-1">
-              <span>紧急: 2个</span>
-              <span>严重: 1个</span>
-              <span>一般: 0个</span>
+              <span>紧急: {disposalSummary.pendingByLevel['紧急']}个</span>
+              <span>严重: {disposalSummary.pendingByLevel['严重']}个</span>
+              <span>一般: {disposalSummary.pendingByLevel['一般']}个</span>
             </div>
           </div>
         </div>
@@ -149,16 +145,12 @@ export const AlarmDisposalPage: React.FC<AlarmDisposalPageProps> = ({ plantName,
             <span className="text-[10px] text-amber-400">重点关注 #1,#3,#4</span>
           </div>
           <div className="flex justify-between items-end h-16 pt-2">
-            {['#1', '#2', '#3', '#4', '#5', '#6', '#7'].map((reg, idx) => {
-              const heights = ['h-12', 'h-8', 'h-14', 'h-16', 'h-6', 'h-10', 'h-7'];
-              const colors = ['bg-rose-500', 'bg-amber-500', 'bg-rose-500', 'bg-amber-500', 'bg-cyan-500', 'bg-cyan-500', 'bg-cyan-500'];
-              return (
-                <div key={reg} className="flex flex-col items-center gap-1 flex-1">
-                  <div className={`w-3 rounded-t ${colors[idx]} ${heights[idx]}`}></div>
-                  <span className="text-[9px] text-slate-400">{reg}</span>
-                </div>
-              );
-            })}
+            {REGIONAL_ALARM_BARS.map((bar) => (
+              <div key={bar.label} className="flex flex-col items-center gap-1 flex-1">
+                <div className={`w-3 rounded-t ${bar.colorClass} ${bar.heightClass}`}></div>
+                <span className="text-[9px] text-slate-400">{bar.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
