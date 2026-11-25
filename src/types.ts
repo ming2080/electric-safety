@@ -196,3 +196,67 @@ export interface FlexibleLoadFaultDevice {
   disposeTime: string;
   operator: string;
 }
+
+export type EnergyMonitoringRecordStatus = 'normal' | 'warning' | 'mild_alert' | 'critical';
+
+/** 能耗监测页监测快照记录 */
+export interface EnergyMonitoringRecord {
+  id: string;
+  time: string;
+  circuit: string;
+  type: string;
+  /** 实时负荷（kW，负值表示放电/反向送电） */
+  realtimeLoad: number;
+  /** 累计用能（kWh） */
+  accumulatedKWh: number;
+  powerFactor: number;
+  copRate: string;
+  status: string;
+  statusType: EnergyMonitoringRecordStatus;
+  warning: string;
+  advice: string;
+}
+
+/** 能耗趋势曲线点：日粒度含光伏消纳，月/年粒度不含 */
+export interface EnergyTrendPoint {
+  time: string;
+  load: number;
+  baseline: number;
+  pv?: number;
+  tag: string;
+  peak?: boolean;
+}
+
+/** 能耗监测页设备能效监测条目 */
+export interface EquipmentEfficiency {
+  name: string;
+  category: string;
+  cop: number;
+  copBenchmark: number;
+  copStatus: string;
+  loadRate: number;
+  powerFactor: number;
+  actualPower: string;
+  dailyKWh: string;
+  health: number;
+  isWarning: boolean;
+}
+
+/** 能耗预警监测单日汇总 */
+export interface EnergyWarningDay {
+  date: string;
+  critical: number;
+  moderate: number;
+  mild: number;
+  totalOverloadKWh: number;
+  status: string;
+}
+
+/** 尖峰平谷用电结构分段 */
+export interface EnergyTariffSegment {
+  name: string;
+  pct: number;
+  kwh: string;
+  color: string;
+  price: string;
+}
