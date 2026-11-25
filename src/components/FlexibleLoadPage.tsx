@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Zap, Sliders, Activity, ShieldCheck, AlertTriangle, Play, RefreshCw, 
+import {
+  Zap, Sliders, Activity, ShieldCheck, AlertTriangle, Play, RefreshCw,
   CheckCircle2, ArrowUpRight, Cpu, BarChart3, Radio, Layers, X, FileText
 } from 'lucide-react';
+import { DEFAULT_FAULT_DEVICE, FLEXIBLE_LOAD_ZONES, formatKw, summarizeFlexibleLoad, zoneLoadRate } from '../data/flexibleLoad';
 
 interface FlexibleLoadPageProps {
   plantName: string;
@@ -17,22 +18,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
 
   // Work Order Modal State (Matching Screenshot)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [modalDevice, setModalDevice] = useState({
-    name: '#1~3 园区智能超级快充站',
-    code: 'FDSB00001',
-    region: '区域一',
-    customer: '青海新能源高载能大用户',
-    level: '严重',
-    alarmType: '柔性负荷越限告警',
-    time: '2026-10-16 15:10',
-    duration: '45min',
-    phenomenon: '区域柔性负荷短时冲击超限，主变负荷率瞬时达到 93.4%。',
-    analysis: '晚高峰新能源充电负荷与工业电解车间负荷叠加，电网侧需进行柔性平抑。',
-    process: '已下发柔性调控指令，对快充桩集群进行功率下调 400kW，负荷曲线恢复平稳。',
-    isResolved: '是',
-    disposeTime: '2026-10-16 15:25',
-    operator: '张工 (调度值班员)'
-  });
+  const [modalDevice, setModalDevice] = useState({ ...DEFAULT_FAULT_DEVICE });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -47,17 +33,11 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
     }, 1200);
   };
 
-  const zones = [
-    { id: 1, name: '#1区域 (新能源充电站)', load: '980.5 kW', capacity: '1,500 kW', status: '正常运行', highLoad: false, devices: 12, transformers: 2 },
-    { id: 2, name: '#2区域 (化工电解车间)', load: '2,450.0 kW', capacity: '3,000 kW', status: '今日负荷过高', highLoad: true, devices: 18, transformers: 3 },
-    { id: 3, name: '#3区域 (综合办公楼)', load: '420.0 kW', capacity: '850 kW', status: '正常运行', highLoad: false, devices: 8, transformers: 1 },
-    { id: 4, name: '#4区域 (智能立体仓储)', load: '1,150.0 kW', capacity: '1,200 kW', status: '今日负荷过高', highLoad: true, devices: 15, transformers: 2 },
-    { id: 5, name: '#5区域 (生化曝气风机)', load: '720.0 kW', capacity: '900 kW', status: '正常运行', highLoad: false, devices: 10, transformers: 2 },
-    { id: 6, name: '#6区域 (辅助生产车间)', load: '890.0 kW', capacity: '1,000 kW', status: '正常运行', highLoad: false, devices: 11, transformers: 2 },
-    { id: 7, name: '#7区域 (综合动力站)', load: '610.0 kW', capacity: '800 kW', status: '正常运行', highLoad: false, devices: 9, transformers: 1 },
-  ];
+  const zones = FLEXIBLE_LOAD_ZONES;
+  const summary = summarizeFlexibleLoad(zones);
 
   const currentZoneData = zones.find(z => z.id === selectedZone) || zones[0];
+  const currentZoneHighLoad = currentZoneData.status === '今日负荷过高';
 
   return (
     <div className="space-y-6 text-xs font-mono text-slate-200 animate-fadeIn relative">
@@ -83,7 +63,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
               </span>
             </div>
             <p className="text-slate-400 text-xs mt-1">
-              系统时间: {systemDateTime} · 全厂总负荷容量: <span className="text-white font-bold">7,220.5 kW</span> · 拓扑节点监控: <span className="text-emerald-400 font-bold">7个区域正常联通</span>
+              系统时间: {systemDateTime} · 全厂总负荷容量: <span className="text-white font-bold">{formatKw(summary.totalLoadKw)}</span> · 拓扑节点监控: <span className="text-emerald-400 font-bold">{summary.zoneCount}个区域正常联通</span>
             </p>
           </div>
         </div>
@@ -110,7 +90,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-800 pb-3 gap-3">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-400" />
-            <h3 className="font-bold text-white text-sm font-sans">10kV 厂区主母线及 7 大网架区域拓扑监控</h3>
+            <h3 className="font-bold text-white text-sm font-sans">10kV 厂区主母线及 {summary.zoneCount} 大网架区域拓扑监控</h3>
           </div>
           <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
             <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-rose-500 inline-block"></span> 母线</span>
@@ -132,7 +112,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
                   : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700'
               }`}
             >
-              {zone.highLoad && (
+              {zone.status === '今日负荷过高' && (
                 <div className="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[9px] font-bold px-1.5 py-0.5 rounded-bl">
                   过高
                 </div>
@@ -142,8 +122,8 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
                 <div className="text-xs font-semibold truncate">{zone.name.split(' ')[1]}</div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-                <span className="text-slate-400">{zone.load}</span>
-                <span className={zone.highLoad ? 'text-amber-400 font-bold' : 'text-emerald-400'}>{zone.status}</span>
+                <span className="text-slate-400">{formatKw(zone.loadKw)}</span>
+                <span className={zone.status === '今日负荷过高' ? 'text-amber-400 font-bold' : 'text-emerald-400'}>{zone.status}</span>
               </div>
             </button>
           ))}
@@ -165,7 +145,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
               >
                 生成该区故障处置单
               </button>
-              <span className={`text-[11px] px-2 py-0.5 rounded border ${currentZoneData.highLoad ? 'bg-amber-950/60 text-amber-300 border-amber-800' : 'bg-emerald-950/60 text-emerald-300 border-emerald-800'}`}>
+              <span className={`text-[11px] px-2 py-0.5 rounded border ${currentZoneHighLoad ? 'bg-amber-950/60 text-amber-300 border-amber-800' : 'bg-emerald-950/60 text-emerald-300 border-emerald-800'}`}>
                 {currentZoneData.status}
               </span>
             </div>
@@ -174,8 +154,8 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800">
               <span className="text-slate-400">当前区域负荷</span>
-              <div className="text-xl font-bold text-amber-300 font-sans mt-1">{currentZoneData.load}</div>
-              <span className="text-[10px] text-slate-500 mt-1 block">额定容量: {currentZoneData.capacity}</span>
+              <div className="text-xl font-bold text-amber-300 font-sans mt-1">{formatKw(currentZoneData.loadKw)}</div>
+              <span className="text-[10px] text-slate-500 mt-1 block">额定容量: {formatKw(currentZoneData.capacityKw)}</span>
             </div>
             <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800">
               <span className="text-slate-400">配电变压器/开关</span>
@@ -247,7 +227,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 flex items-center justify-between">
                 <div>
                   <div className="text-slate-200 font-medium">智能配电变压器 T{selectedZone}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">负荷率: 88.5% · 油温: 58°C</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">负荷率: {zoneLoadRate(currentZoneData)}% · 油温: 58°C</div>
                 </div>
                 <span className="text-[10px] text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800">运行</span>
               </div>
@@ -263,7 +243,7 @@ export const FlexibleLoadPage: React.FC<FlexibleLoadPageProps> = ({ plantName, s
           </div>
 
           <div className="p-3 bg-cyan-950/30 border border-cyan-800/40 rounded-xl text-[11px] text-cyan-300/90 leading-relaxed">
-            提示: 点击上方 #1~#7 区域卡片可切换网架分支，或随时点击“生成故障处置工单”按钮填写处置单。
+            提示: 点击上方 #1~#{summary.zoneCount} 区域卡片可切换网架分支，或随时点击“生成故障处置工单”按钮填写处置单。
           </div>
         </div>
       </div>

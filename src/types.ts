@@ -161,3 +161,38 @@ export interface RegionalAlarmBar {
   heightClass: string;
   colorClass: string;
 }
+
+export type FlexibleLoadZoneStatus = '正常运行' | '今日负荷过高';
+
+/** 柔性负荷页 10kV 网架区域 */
+export interface FlexibleLoadZone {
+  id: number;
+  name: string;
+  /** 当前负荷（kW） */
+  loadKw: number;
+  /** 额定容量（kW） */
+  capacityKw: number;
+  status: FlexibleLoadZoneStatus;
+  /** 接入智能终端数 */
+  devices: number;
+  /** 配电变压器台数 */
+  transformers: number;
+}
+
+/** 故障处置工单弹窗的默认设备信息 */
+export interface FlexibleLoadFaultDevice {
+  name: string;
+  code: string;
+  region: string;
+  customer: string;
+  level: string;
+  alarmType: string;
+  time: string;
+  duration: string;
+  phenomenon: string;
+  analysis: string;
+  process: string;
+  isResolved: '是' | '否';
+  disposeTime: string;
+  operator: string;
+}
